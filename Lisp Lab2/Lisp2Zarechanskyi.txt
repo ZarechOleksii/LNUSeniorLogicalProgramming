@@ -1,0 +1,254 @@
+(set 'testList (list 1 2 3 5 1 0 1 1))
+(write-line "Tested list:")
+(write-line (write-to-string testList))
+
+;1) Min, Max, Incr, Decr
+(defun min_rec 
+    (list minimal)
+    (cond 
+        ((null list) (write-to-string minimal))
+        ((> minimal (car list)) (min_rec (cdr list) (car list)))
+        (T (min_rec (cdr list) minimal))
+    )
+)
+(defun minim (list) (min_rec list most-positive-fixnum))
+
+(defun max_rec 
+    (list maximum)
+    (cond 
+        ((null list) (write-to-string maximum))
+        ((< maximum (car list)) (max_rec (cdr list) (car list)))
+        (T (max_rec (cdr list) maximum))
+    )
+)
+(defun maxim (list) (max_rec list most-negative-fixnum))
+
+(defun incr_rec
+    (list prev)
+    (cond
+        ((null list) T)
+        ((< prev (car list)) (incr_rec (cdr list) (car list)))
+        (T nil)
+    )
+)
+(defun incr (list) (incr_rec (cdr list) (car list)))
+
+(defun decr_rec
+    (list prev)
+    (cond
+        ((null list) T)
+        ((> prev (car list)) (decr_rec (cdr list) (car list)))
+        (T nil)
+    )
+)
+(defun decr (list) (decr_rec (cdr list) (car list)))
+
+(write-line "Minimal value:")
+(write-line (minim testList))
+
+(write-line "Maximum value:")
+(write-line (maxim testList))
+
+(write-line "Is increasing?:")
+(write-line (write-to-string (incr testList)))
+
+(write-line "Is decreasing?:")
+(write-line (write-to-string (decr testList)))
+
+;1 end.
+;2 Sum Count SublistCount Linearize
+(set 'testListSubs (list 1 (list 2 3) 4 (list 5 6 7 (list 8 9)) 10 11 12 (list 13 14) 15))
+(write-line "Tested list:")
+(write-line (write-to-string testListSubs))
+
+(defun linearize_rec 
+    (list current) 
+    (cond
+        ((null list) current)
+        ((listp (car list)) (linearize_rec (cdr list) (linearize_rec (car list) current)))
+        (T (linearize_rec (cdr list) (cons (car list) current)))
+    )
+)
+(defun linearize (listG) (reverse (linearize_rec listG (list))))
+
+(write-line "Linearized:")
+(write-line (write-to-string(linearize testListSubs)))
+
+(defun count_rec 
+    (list current) 
+    (cond
+        ((null list) current)
+        ((listp (car list)) (count_rec (cdr list) (count_rec (car list) current)))
+        (T (count_rec (cdr list) (+ 1 current)))
+    )
+)
+(defun count_el (listG) (count_rec listG 0))
+
+(write-line "Count elements:")
+(write-line (write-to-string(count_el testListSubs)))
+
+(defun sum_rec 
+    (list current) 
+    (cond
+        ((null list) current)
+        ((listp (car list)) (sum_rec (cdr list) (sum_rec (car list) current)))
+        (T (sum_rec (cdr list) (+ (car list) current)))
+    )
+)
+(defun sum_sub (listG) (sum_rec listG 0))
+
+(write-line "Sum of elements:")
+(write-line (write-to-string(sum_sub testListSubs)))
+
+(defun count_sub_rec 
+    (list current) 
+    (cond
+        ((null list) current)
+        ((listp (car list)) (count_sub_rec (cdr list) (count_sub_rec (car list) (+ 1 current))))
+        (T (count_sub_rec (cdr list) current))
+    )
+)
+(defun count_sub (listG) (count_sub_rec listG 0))
+
+(write-line "Num of sublists:")
+(write-line (write-to-string(count_sub testListSubs)))
+;2 end
+;8 Matr_Get, Matr_Change, GenMatr0, PMatr
+(set 'testMatrix (list (list 1 2 3) (list 4 5 6) (list 7 8 9)))
+(write-line "Tested matrix:")
+(write-line (write-to-string testMatrix))
+
+(defun Matr_Get 
+    (m i j)
+    (cond 
+        ((> i 0) (Matr_Get (cdr m) (- i 1) j))
+        ((listp (car m)) (Matr_Get (car m) i j))
+        ((> j 0) (Matr_Get (cdr m) i (- j 1)))
+        ((= j i 0) (car m))
+    )
+)
+
+(write-line "Row 1, column 2:")
+(write-line (write-to-string(Matr_Get testMatrix 0 1)))
+
+(write-line "Row 2, column 3:")
+(write-line (write-to-string(Matr_Get testMatrix 1 2)))
+
+(write-line "Row 3, column 1:")
+(write-line (write-to-string(Matr_Get testMatrix 2 0)))
+
+(defun List_Change_Rec 
+    (list i value subresult) 
+    (cond
+        ((null list) subresult)
+        ((= i 0) (List_Change_Rec (cdr list) (- i 1) value (cons value subresult)))
+        (T (List_Change_Rec (cdr list) (- i 1) value (cons (car list) subresult)))
+    )
+)
+(defun List_Change (list i value) (reverse (List_Change_Rec list i value (list))))
+
+(defun Matr_Change_Rec
+    (m i j value subresult)
+    (cond
+        ((null m) subresult)
+        ((/= i 0) (Matr_Change_Rec (cdr m) (- i 1) j value (cons (car m) subresult)))
+        (T (Matr_Change_Rec (cdr m) (- i 1) j value (cons (List_Change (car m) j value) subresult)))  
+    )
+)
+
+(defun Matr_Change (m i j value) (reverse (Matr_Change_Rec m i j value (list))))
+
+(write-line "Setting 3:2 to be 10")
+(write-line (write-to-string(Matr_Change testMatrix 2 1 10)))
+
+(write-line "Setting 3:3 to be 10")
+(write-line (write-to-string(Matr_Change testMatrix 2 2 10)))
+
+(write-line "Setting 1:1 to be 10")
+(write-line (write-to-string(Matr_Change testMatrix 0 0 10)))
+
+(write-line "Setting 2:3 to be 10")
+(write-line (write-to-string(Matr_Change testMatrix 1 2 10)))
+
+(defun GenList0_Rec 
+    (i subResult) 
+    (cond  
+        ((> i 0) (GenList0_Rec (- i 1) (cons 0 subResult)))
+        (T subResult)
+    )
+)
+(defun GenList0 (i) (GenList0_Rec i (list)))
+
+(defun GenMatr0_Rec 
+    (i j subResult)
+    (cond
+        ((> i 0) (GenMatr0_Rec (- i 1) j (cons (GenList0 j) subResult)))
+        (T subResult)
+    )
+)
+(defun GenMatr0 (i j) (GenMatr0_Rec i j (list)))
+
+(write-line "Creating 3 * 5 zero-matrix:")
+(write-line (write-to-string(GenMatr0 3 5)))
+
+(defun getColumnWidthList 
+    (list i) 
+    (cond 
+        ((> i 0) (getColumnWidthList (cdr list) (- i 1)))
+        (T (length (write-to-string (car list))))
+    )
+)
+(defun getColumnWidthMatrix_rec
+    (matrix i subResult)
+    (cond
+        ((null matrix) (parse-integer (maxim subResult)))
+        (T (getColumnWidthMatrix_rec (cdr matrix) i (cons (getColumnWidthList (car matrix) i) subResult)))
+    )
+)
+(defun getColumnWidthMatrix (matrix i) (getColumnWidthMatrix_rec matrix i (list)))
+
+(defun PMatr_rec 
+    (entire matr row column)
+    (cond 
+        ((null row) 
+            (cond 
+                ((null matr) (terpri)) 
+                (T 
+                    (terpri) 
+                    (format T "|") 
+                    (PMatr_rec entire (cdr matr) (car matr) 0))))
+        (T 
+            (format T 
+                (make-string 
+                    (- (getColumnWidthMatrix entire column) 
+                    (length (write-to-string (car row)))) 
+                    :initial-element #\ ))
+            (write (car row))
+            (format T "|")
+            (PMatr_rec entire matr (cdr row) (+ column 1))
+        )
+    )
+)
+(defun PMatr (matrix) (PMatr_rec matrix matrix nil 0))
+
+(write-line "Testing printing different matrices:")
+(PMatr testMatrix)
+(PMatr (list 
+    (list 11421241251 214 182158) 
+    (list 123 12125 8128)
+    (list 112423 1212125 28)
+    ))
+
+;8 end
+;6 getSquares with O(n) time difficulty
+(defun getSquares_rec 
+    (i current addition)
+    (cond
+        ((> i 0) (write current) (format T ", ") (getSquares_rec (- i 1) (+ current addition) (+ addition 2)))
+        ((= i 0) (write current))
+    )
+)
+(defun getSquares (i) (getSquares_rec i 0 1))
+
+(write-line "Priniting squares from 0 to 8:")
+(getSquares 8)

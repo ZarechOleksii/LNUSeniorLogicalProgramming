@@ -1,0 +1,153 @@
+%first
+first(Head, [Head|_]).
+
+%last
+last(Last, [Last]).
+last(Last, [_|Tail]):- last(Last, Tail).
+
+%contains
+contains([Head|_], Head):- !.
+contains([], _):- fail.
+contains([_|Tail], Element):- contains(Tail, Element).
+
+%size
+size([], 0).
+size([_|Tail], Size):- size(Tail, SizeTail), Size is SizeTail + 1.
+
+%nth_element
+nth_element(0, Head, [Head|_]).
+nth_element(N, Element, [_|Tail]):- nth_element(N1, Element, Tail), N is N1+1. 
+
+%max
+max(Head, [Head]).
+max(Max_Element, [Head|Tail]):-
+    max(Max_Tail, Tail),
+    Max_Tail > Head -> Max_Element is Max_Tail; Max_Element is Head.
+
+%min
+min(Head, [Head]).
+min(Min_Element, [Head|Tail]):-
+    min(Min_Tail, Tail),
+    Min_Tail < Head -> Min_Element is Min_Tail; Min_Element is Head.
+
+%sum
+sum(Head, [Head]).
+sum(Sum, [Head|Tail]):-
+	sum(TailSum, Tail), Sum is TailSum+Head.
+
+%product
+product(Head, [Head]).
+product(Product, [Head|Tail]):-
+	product(TailProduct, Tail), Product is TailProduct*Head.
+
+
+%sublist
+new_head(Tail, Head, [Head|Tail]).
+sublist([Head|_], 0, 1, [Head]).
+sublist([Head|Tail], ToSkip, ToTake, Sublist):-
+    ToSkip > 0 -> (ToSkipNew is ToSkip-1, sublist(Tail, ToSkipNew, ToTake, Sublist));
+    ToTake > 0 -> (ToTakeNew is ToTake-1, sublist(Tail, ToSkip, ToTakeNew, ResultTail), new_head(ResultTail, Head, Sublist)).
+
+
+%count
+count(_, [], 0).
+count(Head, [Head|Tail], N):-
+    count(Head, Tail, N1), N is N1+1, !.
+count(El, [_|Tail], N):-
+    count(El, Tail, N).
+
+%permutation
+permutation([Head1|Tail1], List1, List2):-
+    count(Head1, List1, Occ1),
+    count(Head1, List2, Occ2),
+    Occ1 =:= Occ2 -> permutation(Tail1, List1, List2).
+permutation([], _, _).
+permutation(List1, List2):-
+    size(List1, Size1),
+    size(List2, Size2),
+    Size1 =:= Size2,
+    permutation(List1, List1, List2).
+
+%reverser
+reverser(List, Reversed):-
+    reverser(List, [], Reversed).
+reverser([], Result, Result).
+reverser([Head|Tail], SubResult, Result):- reverser(Tail, [Head | SubResult], Result).
+
+%appender
+appender(List, ToAppend, Result):-
+    reverser(List, Reversed),
+	appender_rec(Reversed, ToAppend, Result).
+appender_rec([], Result, Result).
+appender_rec([Head|Tail], ToAppend, Result):-
+    appender_rec(Tail, [Head | ToAppend], Result).
+
+
+%flatten
+has_lists([]):- fail.
+has_lists([Head|Tail]):-
+    is_list(Head) -> true;
+    has_lists(Tail).
+             
+flatten_start(List, Flattened):-
+    flatten_loop(List, Flattened).
+flatten_loop(List, Flattened):-
+    (has_lists(List), flattening(List, [], FlattenedNew), flatten_loop(FlattenedNew, Flattened));
+    flatten_finish(List, Flattened).
+flatten_finish(Flattened, Flattened).
+flattening([], SubResult, SubResult).
+flattening([Head|Tail], SubResult, Flattened):-
+    (is_list(Head) -> 
+    	appender(SubResult, Head, Appended); 
+    	appender(SubResult, [Head], Appended)),
+    flattening(Tail, Appended, Flattened).
+
+%doubler
+doubler(List, Doubled):-
+    doubler(List, [], DoubledReversed),
+    reverser(DoubledReversed, Doubled).
+doubler([], Result, Result).
+doubler([Head|Tail], SubResult, Result):- doubler(Tail, [Head, Head | SubResult], Result).
+
+%remove_duplicates
+remove_duplicates(List, NoDup):-
+    dup_remover(List, [], NoDup), !.
+dup_remover([], Result, Result).
+dup_remover([Head|Tail], SubResult, Result):-
+    (contains(SubResult, Head), dup_remover(Tail, SubResult, Result));
+    dup_remover(Tail, [Head | SubResult], Result).
+    
+%set operations
+add(El, Set, Result):-
+    \+ contains(Set, El), new_head(Set, El, Result).
+
+remove(El, List, Result):-
+    remove(El, List, [], Result), !.
+remove(_, [], Result, Result).
+remove(Head, [Head|Tail], SubResult, Result):-
+    remove(Head, Tail, SubResult, Result).
+remove(El, [Head|Tail], SubResult, Result):-
+    remove(El, Tail, [Head|SubResult], Result).
+    
+union([], Result, Result).
+union([Head|Tail], Set2, Result):-
+    (contains(Set2, Head), union(Tail, Set2, Result), !);
+    union(Tail, [Head | Set2], Result), !.
+
+intersection(Set1, Set2, Result):-
+    union(Set1, Set2, Union),
+    intersection(Set1, Set2, Union, [], Result), !.
+intersection(_, _, [], Result, Result).
+intersection(Set1, Set2, [Head|Tail], SubResult, Result):-
+    (contains(Set1, Head), contains(Set2, Head), intersection(Set1, Set2, Tail, [Head|SubResult], Result));
+    intersection(Set1, Set2, Tail, SubResult, Result).
+
+difference(Set1, Set2, Result):-
+    intersection(Set1, Set2, Intersection),
+    difference(Set1, Intersection, [], Result), !.
+difference([], _, Result, Result).
+difference([Head|Tail], Intersection, SubResult, Result):-
+    (contains(Intersection, Head), difference(Tail, Intersection, SubResult, Result));
+    difference(Tail, Intersection, [Head|SubResult], Result).
+
+

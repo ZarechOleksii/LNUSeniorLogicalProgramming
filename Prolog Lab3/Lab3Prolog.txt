@@ -1,0 +1,112 @@
+% repository(name, owner, contributors, files)
+% file(name, content, editors, last_edited)
+% person(email, name)
+
+rep('Public rep1',   									
+    person("sample@gmail.com", name),
+    [
+      person("editor1@gmail.com", name1),	
+      person("editor2@gmail.com", name2),
+      person("editor3@gmail.com", name3), 
+      person("editor4@gmail.com", name4),
+      person("editor5@gmail.com", name5)
+    ],
+    [
+      file('File1.txt',
+           'Some text',
+           [person("sample@gmail.com", name)],
+           2022-09-01),
+      file('File2',
+           [heh],
+           [person("editor1@gmail.com", name1)],
+           2022-10-02),
+      file('File3',
+           amogus,
+           [
+           	 person("editor1@gmail.com", name1),
+             person("editor2@gmail.com", name2),
+             person("sample@gmail.com", name)
+           ],
+           2022-09-30),
+      file('File4',
+           'Some TEEEXT',
+           [
+             person("editor1@gmail.com", name1),
+             person("editor2@gmail.com", name2),
+             person("editor3@gmail.com", name3),
+             person("editor4@gmail.com", name4)
+           ],
+           2022-09-25)
+      ]).
+
+%get people who have access to repository
+new_head(Head, Tail, [Head|Tail]).
+
+get_people_with_access(Rep_name, People):-
+    rep(Rep_name, Author, Editors, _),
+    new_head(Author, Editors, People).
+
+%list file names
+get_name([], Result, Result).
+get_name([file(Name, _, _, _)|Tail], SubResult, Result):-
+    get_name(Tail, [Name|SubResult], Result).
+list_files(Rep_name, FileNames):-
+    rep(Rep_name, _, _, Files),
+    get_name(Files, [], FileNames).
+
+%get oldest file in a given rep
+file_date(file(_,_,_, Y-M-D), Y-M-D).
+
+as_older(File, File).
+get_older(File1, File2, Older):-
+    file_date(File1, Y1-M1-D1),
+    file_date(File2, Y2-M2-D2),
+    (Y1 >= Y2, M1 >= M2, D1 > D2, as_older(File1, Older)); 
+    as_older(File1, Older).
+
+get_oldest_rec([File], File).
+get_oldest_rec([Head|Tail], Oldest):-
+    get_oldest_rec(Tail, SubResult),
+    get_older(Head, SubResult, Oldest).
+get_oldest_file(Rep_name, File):-
+    rep(Rep_name, _, _, Files),
+    get_oldest_rec(Files, File), !.
+
+%get useless people (with access but no contributions)
+contains([person(Email, Name)|_], person(Email, Name)).
+contains([person(_, _)|Tail], person(Email, Name)):-
+    contains(Tail, person(Email, Name)).
+has_contributed_rec([file(_, _, Fellas, _)|Tail], Person):-
+    contains(Fellas, Person);
+    has_contributed_rec(Tail, Person).
+has_contributed(Rep_name, Person):-
+    rep(Rep_name, _, _, Files),
+    has_contributed_rec(Files, Person).
+
+filter_people([], _, Result, Result).
+filter_people([Head|Tail], Useful, SubResult, Result):-
+    contains(Useful, Head) -> 
+    filter_people(Tail, Useful, SubResult, Result);
+    filter_people(Tail, Useful, [Head|SubResult], Result).
+
+get_useless_people(Rep_name, Useless):-
+    get_people_with_access(Rep_name, Possible_Useless),
+    findall(Person, has_contributed(Rep_name, Person), Useful_People),
+	filter_people(Possible_Useless, Useful_People, [], Useless).
+
+% get contributions
+get_contributions_rec([], _, Result, Result).
+get_contributions_rec([file(Name, _, Fellas, _)|Tail], Person, SubResult, Result):-
+    (contains(Fellas, Person) -> get_contributions_rec(Tail, Person, [Name| SubResult], Result));
+    get_contributions_rec(Tail, Person, SubResult, Result).
+
+by_email(Email, person(Email, _)).
+    
+get_contributions_by_email(Rep_name, Email, Contributions):-
+    rep(Rep_name, _, _, Files),
+    by_email(Email, Person),
+    get_contributions_rec(Files, Person, [], Contributions).
+    
+
+
+

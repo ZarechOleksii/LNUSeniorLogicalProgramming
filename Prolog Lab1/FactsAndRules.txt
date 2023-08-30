@@ -1,0 +1,54 @@
+/*facts*/
+/*Insert more facts here (gender and child-parent relationships)*/
+male(one).
+female(two).
+
+child(one, two)
+
+/* rules */
+father(Father, Child):- child(Child, Father), male(Father).
+mother(Mother, Child):- child(Child, Mother), female(Mother).
+
+grandparent(Grandparent, Grandchild):- child(Parent, Grandparent), child(Grandchild, Parent).
+grandmother(Grandmother, Grandchild):- grandparent(Grandmother, Grandchild),female(Grandmother).
+grandfather(Grandfather, Grandchild):- grandparent(Grandfather, Grandchild),male(Grandfather).
+
+sibling(Sibling1, Sibling2):- 
+    mother(Mother, Sibling1),
+    father(Father, Sibling1), 
+    mother(Mother, Sibling2),
+    father(Father, Sibling2), 
+    not(Sibling1 = Sibling2).
+sister(Sister, Sibling):- sibling(Sister, Sibling), female(Sister).
+brother(Brother, Sibling):- sibling(Brother, Sibling), male(Brother).
+
+uncle(Uncle, Nephew):- child(Nephew, Sibling), brother(Uncle, Sibling).
+aunt(Aunt, Nephew):- child(Nephew, Sibling), sister(Aunt, Sibling).
+
+cousin(Cousin1, Cousin2):- 
+    child(Cousin2, UncleOrAunt),
+    (uncle(UncleOrAunt, Cousin1); aunt(UncleOrAunt, Cousin1)).
+
+ancestor(Ancestor, Successor):-
+    child(Successor, Ancestor).
+ancestor(AncestorOfAncestor, Successor):-
+	ancestor(AncestorOfAncestor, Ancestor),
+    child(Successor, Ancestor).
+    
+relative(Relative1, Relative2):-
+	mother(Relative1, Relative2);
+	father(Relative1, Relative2);
+	mother(Relative2, Relative1);
+	father(Relative2, Relative1). 
+relative(Relative1, Relative3):- 
+    relative(Relative1, Relative2),
+    (
+      mother(Relative2, Relative3);
+      father(Relative2, Relative3);
+      mother(Relative3, Relative2);
+      father(Relative3, Relative2) 
+    ),
+    not(Relative1 = Relative3).
+
+
+

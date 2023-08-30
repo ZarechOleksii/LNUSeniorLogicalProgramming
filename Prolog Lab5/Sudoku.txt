@@ -1,0 +1,500 @@
+/*
+Easy
+[
+  [[], [], 5, 8, 2, [], [], [], []],
+  [[], 4, [], [], [], [], [], [], 2],
+  [[], [], [], [], 6, 5, 8, 7, []],
+  [[], 5, [], 9, [], [], 2, 4, []],
+  [[], 9, 7, [], [], [], [], 1, 8],
+  [[], [], 8, [], [], 6, [], [], []],
+  [1, [], 4, [], [], 7, [], [], []],
+  [5, [], 9, 1, 8, [], 4, 3, 7],
+  [2, [], 3, 6, 9, 4, [], 8, 5]
+]
+Medium
+[
+  [[], 6, 2, 5, [], [], [], [], []],
+  [7, 5, [], [], [], [], 1, 2, []],
+  [[], [], [], 2, 4, [], [], 7, 5],
+  [5, 4, 7, [], [], [], 3, 8, 6],
+  [6, [], [], [], 8, 3, [], [], []],
+  [8, [], [], [], [], [], [], [], []],
+  [[], 8, [], [], 6, [], 4, 5, []],
+  [[], [], [], 8, [], [], [], 1, []],
+  [2, [], 5, 3, [], [], 8, [], 9]
+]
+Hard
+[
+  [5, [], 1, 3, [], 4, [], [], []],
+  [4, 2, [], [], [], [], [], [], []],
+  [[], 7, [], [], [], [], 1, 4, []],
+  [[], [], [], 4, 9, [], [], 1, []],
+  [[], [], [], [], 1, [], [], 3, 6],
+  [1, [], 6, [], [], [], [], [], []],
+  [[], [], [], [], 3, 1, 7, 6, []],
+  [2, [], [], [], 4, [], [], [], []],
+  [6, 1, 3, [], [], [], [], 5, 9]
+]
+Expert
+[
+  [5, [], [], 4, [], [], 1, [], []],
+  [3, [], [], [], [], 5, [], [], 7],
+  [[], 9, [], [], [], 3, 5, [], []],
+  [2, [], [], 7, [], [], [], [], []],
+  [[], [], 4, [], [], 8, [], [], []],
+  [6, [], [], [], [], [], [], [], 9],
+  [[], [], 6, [], [], [], 4, [], []],
+  [[], [], 1, [], [], 9, 2, [], []],
+  [4, [], [], [], 5, [], 9, 8, []]
+]
+Evil
+[
+  [5, [], [], [], [], [], 2, 3, []],
+  [[], 3, [], 4, [], 2, 1, [], []],
+  [[], [], [], 7, [], [], [], [], []],
+  [[], 2, [], [], 7, [], [], [], []],
+  [[], [], [], [], 5, [], 6, [], []],
+  [8, [], [], 2, [], 6, [], [], 4],
+  [[], [], 9, [], [], [], [], [], 8],
+  [[], 5, [], 3, [], 1, 4, [], []],
+  [[], [], [], [], 6, [], [], [], []]
+]
+*/
+assign(Result, Result).
+
+size([], 0).
+size([_|Tail], Size):- size(Tail, SizeTail), Size is SizeTail + 1.
+
+reverser(List, Reversed):-
+    reverser(List, [], Reversed).
+reverser([], Result, Result).
+reverser([Head|Tail], SubResult, Result):- reverser(Tail, [Head | SubResult], Result).
+
+appender(List, ToAppend, Result):-
+    reverser(List, Reversed),
+	appender_rec(Reversed, ToAppend, Result).
+appender_rec([], Result, Result).
+appender_rec([Head|Tail], ToAppend, Result):-
+    appender_rec(Tail, [Head | ToAppend], Result).
+
+getElement(0, [Element|_], Element):- !.
+getElement(Index, [_|Tail], Element):-
+    N is Index-1,
+    getElement(N, Tail, Element).
+
+getColumn_rec(_, [], Column, Column):- !.
+getColumn_rec(Index, [Row|Rows], Column, Result):-
+    getElement(Index, Row, Element),
+    getColumn_rec(Index, Rows, [Element|Column], Result).
+getColumn(Index, Matrix, Result):-
+    getColumn_rec(Index, Matrix, [], Reversed),
+    reverser(Reversed, Result).
+
+new_head(Tail, Head, [Head|Tail]).
+sublist([Head|_], 0, 1, [Head]).
+sublist([Head|Tail], ToSkip, ToTake, Sublist):-
+    ToSkip > 0 -> (ToSkipNew is ToSkip-1, sublist(Tail, ToSkipNew, ToTake, Sublist));
+    ToTake > 0 -> (ToTakeNew is ToTake-1, sublist(Tail, ToSkip, ToTakeNew, ResultTail), new_head(ResultTail, Head, Sublist)).
+
+getSquare_rec(0, _, 0, _, Result, Result):- !.
+getSquare_rec(0, Column, ToTakeRows, [Row|Rows], SubResult, Result):-
+    TKR1 is ToTakeRows-1,
+    sublist(Row, Column, 3, FromRow),
+    appender(SubResult, FromRow, Appended),
+    getSquare_rec(0, Column, TKR1, Rows, Appended, Result).
+getSquare_rec(RowNum, Column, ToTakeRows, [_|Rows], SubResult, Result):-
+    R1 is RowNum-1,
+    getSquare_rec(R1, Column, ToTakeRows, Rows, SubResult, Result).
+getSquare(Row, Column, Matrix, Result):-
+    (   (   Row < 3, Column < 3, getSquare_rec(0, 0, 3, Matrix, [], Result), !);
+    (   Row < 3, Column > 5, getSquare_rec(0, 6, 3, Matrix, [], Result), !);
+    (   Row > 5, Column > 5, getSquare_rec(6, 6, 3, Matrix, [], Result), !);
+    (   Row > 5, Column < 3, getSquare_rec(6, 0, 3, Matrix, [], Result), !);
+    (   Row > 2, Row < 6, Column < 3, getSquare_rec(3, 0, 3, Matrix, [], Result), !);
+    (   Row > 2, Row < 6, Column > 5, getSquare_rec(3, 6, 3, Matrix, [], Result), !);
+    (   Row < 3, Column < 6, Column > 2, getSquare_rec(0, 3, 3, Matrix, [], Result), !);
+    (   Row > 5, Column < 6, Column > 2, getSquare_rec(6, 3, 3, Matrix, [], Result), !);
+    (   getSquare_rec(3, 3, 3, Matrix, [], Result), !)).
+
+containsList([]):- fail.
+containsList([Head|Tail]):-
+    (   is_list(Head), true, !);
+    containsList(Tail).
+
+checkFinish([]).
+checkFinish([Row|Rows]):-
+    not(containsList(Row)), checkFinish(Rows), !.
+
+setAtRow([], -1, _, Result, Result).
+setAtRow([Head|Tail], -1, Element, SubResult, Result):-
+    setAtRow(Tail, -1, Element, [Head|SubResult], Result).
+setAtRow([_|Tail], 0, Element, SubResult, Result):-
+    setAtRow(Tail, -1, Element, [Element|SubResult], Result).
+setAtRow([Head|Tail], Index, Element, SubResult, Result):-
+    N1 is Index-1,
+    setAtRow(Tail, N1, Element, [Head|SubResult], Result), !.
+
+setAtRow(Row, Index, Element, Result):-
+    setAtRow(Row, Index, Element, [], Reversed),
+    reverser(Reversed, Result).
+
+setAt([Head|Rows], -1, Column, Element, SubResult, Result):-
+    setAt(Rows, -1, Column, Element, [Head|SubResult], Result).
+setAt([], -1, _, _, Result, Result).
+setAt([Head|Rows], 0, Column, Element, SubResult, Result):-
+	setAtRow(Head, Column, Element, NewRow),
+    setAt(Rows, -1, Column, Element, [NewRow|SubResult], Result), !.
+setAt([Head|Rows], Row, Column, Element, SubResult, Result):-
+    R1 is Row-1,
+    setAt(Rows, R1, Column, Element, [Head|SubResult], Result).
+
+setAt(Matrix, Row, Column, Element, Result):-
+    setAt(Matrix, Row, Column, Element, [], Reversed),
+    reverser(Reversed, Result).
+
+getAt([Head|_], 0, Column, Element):-
+    getElement(Column, Head, Element).
+getAt([_|Tail], Row, Column, Element):-
+    R1 is Row-1,
+    getAt(Tail, R1, Column, Element).
+
+removeLists([], Result, Result).
+removeLists([Head|Tail], SubResult, Result):-
+    (	is_list(Head), removeLists(Tail, SubResult, Result), !);
+    removeLists(Tail, [Head|SubResult], Result).
+removeLists(List, Result):-
+    removeLists(List, [], Reversed),
+    reverser(Reversed, Result).
+
+contains([], _):- fail.
+contains([Given|_], Given):- !.
+contains([_|Tail], Given):-
+    contains(Tail, Given), !.
+
+union([], Result, Result).
+union([Head|Tail], Set2, Result):-
+    (contains(Set2, Head), union(Tail, Set2, Result), !);
+    union(Tail, [Head | Set2], Result), !.
+
+minus([], _, Result, Result).
+minus([Head|Tail], Set2, SubResult, Result):-
+    (contains(Set2, Head), minus(Tail, Set2, SubResult, Result), !);
+    minus(Tail, Set2, [Head | SubResult], Result), !.
+minus(Set1, Set2, Result):-
+    minus(Set1, Set2, [], Result).
+
+getPossible(Matrix, Row, Column, Result):-
+    getSquare(Row, Column, Matrix, Square),
+    removeLists(Square, SquareClean),
+    getElement(Row, Matrix, RowRes),
+    removeLists(RowRes, RowClean),
+    getColumn(Column, Matrix, ColumnRes),
+    removeLists(ColumnRes, ColumnClean),
+    union(SquareClean, RowClean, SquareAndRow),
+    union(SquareAndRow, ColumnClean, ToExclude),
+    minus([1, 2, 3, 4, 5, 6, 7, 8, 9], ToExclude, Result).
+
+fillInitial(Matrix, 8, 8, Result):-
+    getAt(Matrix, 8, 8, Element),
+    (   is_list(Element), 
+    	getPossible(Matrix, 8, 8, Possible), 
+    	setAt(Matrix, 8, 8, Possible, Result), !);
+    assign(Matrix, Result).
+    
+fillInitial(Matrix, Row, 8, Result):-
+    getAt(Matrix, Row, 8, Element),
+    (   is_list(Element), 
+    	getPossible(Matrix, Row, 8, Possible), 
+    	setAt(Matrix, Row, 8, Possible, Filled),
+    	R1 is Row+1,
+        fillInitial(Filled, R1, 0, Result), !);
+    R1 is Row+1,
+    fillInitial(Matrix, R1, 0, Result).
+
+fillInitial(Matrix, Row, Column, Result):-
+    getAt(Matrix, Row, Column, Element),
+    (   is_list(Element), 
+    	getPossible(Matrix, Row, Column, Possible), 
+    	setAt(Matrix, Row, Column, Possible, Filled),
+    	C1 is Column+1,
+        fillInitial(Filled, Row, C1, Result), !);
+    C1 is Column+1,
+    fillInitial(Matrix, Row, C1, Result).
+
+fillInitial(Matrix, Result):-
+    fillInitial(Matrix, 0, 0, Result).
+
+removeFromList([], _, Result, Result).
+removeFromList([Element|Tail], Element, SubResult, Result):-
+    removeFromList(Tail, Element, SubResult, Result).
+removeFromList([Head|Tail], Element, SubResult, Result):-
+    removeFromList(Tail, Element, [Head|SubResult], Result).
+removeFromList(List, Element, Result):-
+    removeFromList(List, Element, [], Reversed),
+    reverser(Reversed, Result), !.
+
+removeFromOneRow([], _, Result, Result).
+removeFromOneRow([Head|Tail], Element, SubResult, Result):-
+    (   is_list(Head), 
+    	removeFromList(Head, Element, NewList), 
+    	removeFromOneRow(Tail, Element, [NewList|SubResult], Result), !);
+    removeFromOneRow(Tail, Element, [Head|SubResult], Result).
+    
+removeFromOneRow(Row, Element, Result):-
+    removeFromOneRow(Row, Element, [], Reversed),
+    reverser(Reversed, Result), !.
+
+removeFromRow([], _, _, Result, Result).
+removeFromRow([Head|Tail], -1, Element, SubResult, Result):-
+    removeFromRow(Tail, -1, Element, [Head|SubResult], Result).
+removeFromRow([Head|Tail], 0, Element, SubResult, Result):-
+	removeFromOneRow(Head, Element, NewRow),
+    removeFromRow(Tail, -1, Element, [NewRow|SubResult], Result).
+removeFromRow([Head|Tail], Index, Element, SubResult, Result):-
+    N1 is Index-1,
+    removeFromRow(Tail, N1, Element, [Head|SubResult], Result).
+
+removeFromRow(Matrix, Index, Element, Result):-
+    removeFromRow(Matrix, Index, Element, [], Reversed),
+    reverser(Reversed, Result), !.
+
+removeFromOneElement([], _, _, Result, Result).
+removeFromOneElement([Head|Tail], 0, Element, SubResult, Result):-
+    (   is_list(Head), 
+    	removeFromList(Head, Element, Removed),
+        removeFromOneElement(Tail, -1, Element, [Removed|SubResult], Result));
+    removeFromOneElement(Tail, -1, Element, [Head|SubResult], Result).
+removeFromOneElement([Head|Tail], Index, Element, SubResult, Result):-
+    N1 is Index-1,
+    removeFromOneElement(Tail, N1, Element, [Head|SubResult], Result).
+removeFromOneElement(List, Index, Element, Result):-
+    removeFromOneElement(List, Index, Element, [], Reversed),
+    reverser(Reversed, Result), !.
+
+removeFromColumn([], _, _, Result, Result).
+removeFromColumn([Head|Tail], Index, Element, SubResult, Result):-
+    removeFromOneElement(Head, Index, Element, NewRow),
+    removeFromColumn(Tail, Index, Element, [NewRow|SubResult], Result).
+
+removeFromColumn(Matrix, Index, Element, Result):-
+    removeFromColumn(Matrix, Index, Element, [], Reversed),
+    reverser(Reversed, Result), !.
+
+removeFromThreeElements([], 0, 0, _, Result, Result).
+removeFromThreeElements([Head|Tail], 0, 0, Element, SubResult, Result):-
+    removeFromThreeElements(Tail, 0, 0, Element, [Head|SubResult], Result).
+removeFromThreeElements([Head|Tail], 0, Counter, Element, SubResult, Result):-
+    (   is_list(Head), 
+    	C1 is Counter-1,
+    	removeFromList(Head, Element, NewList), 
+    	removeFromThreeElements(Tail, 0, C1, Element, [NewList|SubResult], Result) );
+    C1 is Counter-1,
+    removeFromThreeElements(Tail, 0, C1, Element, [Head|SubResult], Result).
+    
+removeFromThreeElements([Head|Tail], Index, 3, Element, SubResult, Result):-
+    N1 is Index-1,
+    removeFromThreeElements(Tail, N1, 3, Element, [Head|SubResult], Result).
+
+removeFromThreeElements(Row, Index, Element, Result):-
+    removeFromThreeElements(Row, Index, 3, Element, [], Reversed),
+    reverser(Reversed, Result), !.
+
+removeFromSquare([], _, _, _, _, Reversed, Result):-
+    reverser(Reversed, Result).
+removeFromSquare([Head|Tail], 0, Column, 0, Element, SubResult, Result):-
+    removeFromSquare(Tail, 0, Column, 0, Element, [Head|SubResult], Result).
+removeFromSquare([Head|Tail], 0, Column, Counter, Element, SubResult, Result):-
+    C1 is Counter-1,
+    removeFromThreeElements(Head, Column, Element, NewRow),
+    removeFromSquare(Tail, 0, Column, C1, Element, [NewRow|SubResult], Result).
+removeFromSquare([Head|Tail], Row, Column, Counter, Element, SubResult, Result):-
+    R1 is Row-1,
+    removeFromSquare(Tail, R1, Column, Counter, Element, [Head|SubResult], Result).
+
+removeFromSquare(Matrix, Row, Column, Element, Result):-
+    (   Row < 3, Column < 3, removeFromSquare(Matrix, 0, 0, 3, Element, [], Result), !);
+    (   Row < 3, Column > 5, removeFromSquare(Matrix, 0, 6, 3, Element, [], Result), !);
+    (   Row > 5, Column > 5, removeFromSquare(Matrix, 6, 6, 3, Element, [], Result), !);
+    (   Row > 5, Column < 3, removeFromSquare(Matrix, 6, 0, 3, Element, [], Result), !);
+    (   Row > 2, Row < 6, Column < 3, removeFromSquare(Matrix, 3, 0, 3, Element, [], Result), !);
+    (   Row > 2, Row < 6, Column > 5, removeFromSquare(Matrix, 3, 6, 3, Element, [], Result), !);
+    (   Row < 3, Column < 6, Column > 2, removeFromSquare(Matrix, 0, 3, 3, Element, [], Result), !);
+    (   Row > 5, Column < 6, Column > 2, removeFromSquare(Matrix, 6, 3, 3, Element, [], Result), !);
+    (   removeFromSquare(Matrix, 3, 3, 3, Element, [], Result), !).
+
+removeFromRCS(Matrix, Row, Column, Element, Result):-
+    removeFromRow(Matrix, Row, Element, SubResult1),
+    removeFromColumn(SubResult1, Column, Element, SubResult2),
+    removeFromSquare(SubResult2, Row, Column, Element, Result).
+
+getFirst([Head|_], Head).
+
+isSolitary(Element):-
+    is_list(Element),
+    size(Element, Size),
+    Size == 1.
+
+assignSolitary(Matrix, 8, 8, Result):-
+    (   
+    	getAt(Matrix, 8, 8, Element),
+    	isSolitary(Element), 
+    	getFirst(Element, ToAssign),
+        setAt(Matrix, 8, 8, ToAssign, NewMatrix),
+        removeFromRCS(NewMatrix, 8, 8, ToAssign, Result), !
+    );
+    assign(Matrix, Result).
+
+assignSolitary(Matrix, Row, 8, Result):-
+    (   
+    	getAt(Matrix, Row, 8, Element),
+    	isSolitary(Element), 
+    	getFirst(Element, ToAssign),
+        setAt(Matrix, Row, 8, ToAssign, NewMatrix),
+        removeFromRCS(NewMatrix, Row, 8, ToAssign, ClearedMatrix),
+        R1 is Row+1,
+        assignSolitary(ClearedMatrix, R1, 0, Result), !
+    );
+    R1 is Row+1,
+    assignSolitary(Matrix, R1, 0, Result).
+
+assignSolitary(Matrix, Row, Column, Result):-
+    (   
+    	getAt(Matrix, Row, Column, Element),
+    	isSolitary(Element), 
+    	getFirst(Element, ToAssign),
+        setAt(Matrix, Row, Column, ToAssign, NewMatrix),
+        removeFromRCS(NewMatrix, Row, Column, ToAssign, ClearedMatrix),
+        C1 is Column+1,
+        assignSolitary(ClearedMatrix, Row, C1, Result), !
+    );
+    C1 is Column+1,
+    assignSolitary(Matrix, Row, C1, Result).
+
+solemnOccurence([], 1, _).
+solemnOccurence([Head|Tail], 0, Element):-
+    (   
+    	not(contains(Head, Element)),
+        solemnOccurence(Tail, 0, Element), !
+    );
+    solemnOccurence(Tail, 1, Element).
+
+solemnOccurence([Head|Tail], 1, Element):-
+    not(contains(Head, Element)),
+    solemnOccurence(Tail, 1, Element).
+
+filterNonLists([], Result, Result).
+filterNonLists([Head|Tail], SubResult, Result):-
+	(   
+    	is_list(Head),
+        filterNonLists(Tail, [Head|SubResult], Result), !);
+    filterNonLists(Tail, SubResult, Result).
+filterNonLists(List, Result):-
+    filterNonLists(List, [], Reversed),
+    reverser(Reversed, Result).
+
+solemnOccurenceAction([], _, _, _, Result, Result):- fail.
+solemnOccurenceAction([Head|Tail], Filtered, Row, Column, Matrix, Result):-
+    (   
+    	solemnOccurence(Filtered, 0, Head),
+        setAt(Matrix, Row, Column, Head, SetElement),
+        removeFromRCS(SetElement, Row, Column, Head, Result),
+        !);
+    solemnOccurenceAction(Tail, Filtered, Row, Column, Matrix, Result).
+
+solemnOccurenceAction(Matrix, Row, Column, Result):-
+    (   
+    	getAt(Matrix, Row, Column, Element),
+        getElement(Row, Matrix, TheRow),
+        filterNonLists(TheRow, FilteredRow),
+        solemnOccurenceAction(Element, FilteredRow, Row, Column, Matrix, Result), !
+    );
+    (   
+    	getAt(Matrix, Row, Column, Element),
+        getColumn(Column, Matrix, TheColumn),
+        filterNonLists(TheColumn, FilteredColumn),
+        solemnOccurenceAction(Element, FilteredColumn, Row, Column, Matrix, Result), !
+    );
+    (   
+    	getAt(Matrix, Row, Column, Element),
+        getSquare(Row, Column, Matrix, TheSquare),
+        filterNonLists(TheSquare, FilteredSquare),
+        solemnOccurenceAction(Element, FilteredSquare, Row, Column, Matrix, Result), !
+    );
+    assign(Matrix, Result).
+
+assignOnlyChoice(Matrix, 8, 8, Result):-
+    solemnOccurenceAction(Matrix, 8, 8, Result).
+
+assignOnlyChoice(Matrix, Row, 8, Result):-
+    solemnOccurenceAction(Matrix, Row, 8, SubResult),
+    R1 is Row+1,
+    assignOnlyChoice(SubResult, R1, 0, Result).
+
+assignOnlyChoice(Matrix, Row, Column, Result):-
+    solemnOccurenceAction(Matrix, Row, Column, SubResult),
+    C1 is Column+1,
+    assignOnlyChoice(SubResult, Row, C1, Result).
+
+checkNoChange(After, After).
+
+hasErrors([]):- fail.
+hasErrors([Head|Tail]):-
+    contains(Head, []);
+    hasErrors(Tail).
+
+getFirstListColumn([Head|Tail], ColumnIterator, Column):-
+    is_list(Head) ->  assign(Column, ColumnIterator);
+    C1 is ColumnIterator+1,
+    getFirstListColumn(Tail, C1, Column). 
+
+getFirstListCoordinates([Head|Tail], RowIterator, Row, Column):-
+    containsList(Head) -> getFirstListColumn(Head, 0, Column), assign(Row, RowIterator);
+    R1 is RowIterator+1,
+    getFirstListCoordinates(Tail, R1, Row, Column).
+    
+getFirstListCoordinates(Matrix, Row, Column):-
+    getFirstListCoordinates(Matrix, 0, Row, Column).
+
+performMaliciousActivity(Matrix, NewStableRow, NewStableColumn, ChosenElement, SusMatrix):-
+    getFirstListCoordinates(Matrix, NewStableRow, NewStableColumn),
+    getAt(Matrix, NewStableRow, NewStableColumn, EntireList),
+    getFirst(EntireList, ChosenElement),
+    setAt(Matrix, NewStableRow, NewStableColumn, ChosenElement, AssignedMatrix),
+    removeFromRCS(AssignedMatrix, NewStableRow, NewStableColumn, ChosenElement, SusMatrix).
+
+removeFirst([_|Tail], Tail).
+
+sudokuRec(Current, LastStable, LastStableRow, LastStableColumn, SetElement, Result):-
+    (   checkFinish(Current), assign(Current, Result), !);
+    assignSolitary(Current, 0, 0, SubResult1),
+    assignOnlyChoice(SubResult1, 0, 0, SubResult2),
+	(   hasErrors(SubResult2) ->
+    	getFirst(LastStable, StableMatrix),
+    	getFirst(LastStableRow, UnstableRow),
+    	getFirst(LastStableColumn, UnstableColumn),
+    	getFirst(SetElement, UnstableElement),
+    	getAt(StableMatrix, UnstableRow, UnstableColumn, ToBeEdited),
+        removeFromList(ToBeEdited, UnstableElement, Edited),
+        setAt(StableMatrix, UnstableRow, UnstableColumn, Edited, FixedMatrix),
+        removeFirst(LastStable, RemovedUnstableMatrix),
+        removeFirst(LastStableRow, RemovedUnstableRow),
+        removeFirst(LastStableColumn, RemovedUnstableColumn),
+        removeFirst(SetElement, RemovedUnstableElement),
+        sudokuRec(FixedMatrix, RemovedUnstableMatrix, RemovedUnstableRow, RemovedUnstableColumn, RemovedUnstableElement, Result), !;
+    	
+    	checkNoChange(Current, SubResult2) ->
+    	performMaliciousActivity(SubResult2, NewStableRow, NewStableColumn, ChosenElement, SusMatrix),
+    	sudokuRec(SusMatrix, 
+                  [Current|LastStable], 
+                  [NewStableRow|LastStableRow], 
+                  [NewStableColumn|LastStableColumn], 
+                  [ChosenElement|SetElement], Result), !;
+    
+    	sudokuRec(SubResult2, LastStable, LastStableRow, LastStableColumn, SetElement, Result), !
+    ).
+
+sudoku(Matrix, Result):-
+    fillInitial(Matrix, Initial),
+    sudokuRec(Initial, [], [], [], [], Result), !.
+
+

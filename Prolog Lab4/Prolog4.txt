@@ -1,0 +1,150 @@
+% vertice(id).
+% connection(from, to, weight).
+vertice(1).
+vertice(2).
+vertice(3).
+vertice(4).
+vertice(5).
+vertice(6).
+vertice(7).
+vertice(8).
+vertice(9).
+vertice(10).
+vertice(11).
+vertice(12).
+
+connection(1, 2, 20).
+connection(1, 5, 20).
+connection(1, 6, 10).
+connection(2, 3, 5).
+connection(2, 7, 5).
+connection(3, 4, 10).
+connection(4, 5, 10).
+connection(4, 9, 10).
+connection(5, 10, 10).
+connection(6, 10, 3).
+connection(7, 12, 10).
+connection(8, 3, 10).
+connection(8, 12, 10).
+connection(9, 11, 10).
+connection(10, 6, 2).
+connection(11, 12, 10).
+
+%helpers
+size([], 0).
+size([_|Tail], Size):- size(Tail, SizeTail), Size is SizeTail + 1.
+
+nth_element(0, Head, [Head|_]).
+nth_element(N, Element, [_|Tail]):- nth_element(N1, Element, Tail), N is N1+1. 
+
+list_of_rec(0, _, List, List).
+list_of_rec(N, Element, SubResult, Result):-
+    N1 is N-1,
+    list_of_rec(N1, Element, [Element|SubResult], Result).
+list_of(Length, Element, List):-
+  list_of_rec(Length, Element, [], List), !.
+
+by_index_rec(Element, 0, [], [Element]).
+by_index_rec(Element, 0, [_|Tail], [Element|Tail]).
+
+by_index_rec(Element, Index, [Head|Tail], [Head|SubResult]):-
+	In1 is Index - 1,
+    by_index_rec(Element, In1, Tail, SubResult).
+
+set_by_index(Element, Index, List, Result):-
+	by_index_rec(Element, Index, List, Result), !.
+
+contains([Head|_], Head):- !.
+contains([], _):- fail.
+contains([_|Tail], Element):- contains(Tail, Element).
+
+min(Head, [Head]).
+min(Min_Element, [Head|Tail]):-
+    min(Min_Tail, Tail),
+    Min_Tail < Head -> Min_Element is Min_Tail; Min_Element is Head.
+
+indices([], _, []).
+indices([Head|Tail], List, [Index|Result]):-
+    indices(Tail, List, Result),
+    nth_element(Index, Head, List), !.
+
+take_unpassed([], _, Result, Result).
+take_unpassed([Head|Tail], Passed, SubResult, UnpassedIndices):-
+    nth_element(Head, IsPassed, Passed),
+    (   IsPassed = false, take_unpassed(Tail, Passed, [Head|SubResult], UnpassedIndices), !);
+    take_unpassed(Tail, Passed, SubResult, UnpassedIndices), !.
+
+new_weights([], _, _, _, Paths, Paths).
+new_weights([Head|Tail], CurrentElement, PassingWeight, Vertices, Paths, NewPaths):-
+    nth_element(Head, IterWeight, Paths),
+    nth_element(Head, IterVertice, Vertices),
+    connection(CurrentElement, IterVertice, ConWeight),
+    ( IterWeight > PassingWeight + ConWeight -> 
+    NewWeight is PassingWeight + ConWeight, 
+    set_by_index(NewWeight, Head, Paths, SubPaths); true),
+    new_weights(Tail, CurrentElement, PassingWeight, Vertices, SubPaths, NewPaths).
+
+take_at_indices([], _, _, []).
+take_at_indices([Head|Tail], Indices, Index, Result):-
+    In1 is Index + 1,
+    take_at_indices(Tail, Indices, In1, SubResult),
+    (	contains(Indices, Index) -> assign_res([Head|SubResult], Result), !; assign_res(SubResult, Result)).
+
+temp_paths([], [], []).
+temp_paths([HeadPaths|TailPaths], [false|TailPassed], TempPaths):-
+    temp_paths(TailPaths, TailPassed, SubResult),
+    assign_res(TempPaths, [HeadPaths|SubResult]).
+temp_paths([_|TailPaths], [true|TailPassed], TempPaths):-
+    temp_paths(TailPaths, TailPassed, SubResult),
+    assign_res(TempPaths, [inf|SubResult]).
+
+find_min(Passed, Paths, MinWeight, MinIndex):-
+    temp_paths(Paths, Passed, TempPaths),
+    min(MinWeight, TempPaths),
+    nth_element(MinIndex, MinWeight, TempPaths);
+    assign_res(-1, MinIndex),
+    assign_res(inf, MinWeight).
+
+%Dijkstra
+assign_res(Assign, Assign).
+dijkstra_rec(Current, CurrentIndex, Vertices, Paths, Passed, Results):-
+    findall(Q, connection(Current, Q, _), Connected),
+    indices(Connected, Vertices, ConnectedIndices),
+    take_unpassed(ConnectedIndices, Passed, [], UnpassedIndices),
+    nth_element(CurrentIndex, CurrentWeight, Paths),
+    new_weights(UnpassedIndices, Current, CurrentWeight, Vertices, Paths, NewPaths),
+    set_by_index(true, CurrentIndex, Passed, NewPassed),
+    (
+    	contains(Passed, false),
+        find_min(NewPassed, NewPaths, MinWeight, NewCurrentIndex),
+        not(MinWeight = inf),
+        nth_element(NewCurrentIndex, NewCurrent, Vertices),
+    
+    	dijkstra_rec(NewCurrent, NewCurrentIndex, Vertices, NewPaths, NewPassed, Results)
+    );
+    assign_res(Paths, Results).
+
+dijkstra(From, To, Path):-
+    findall(Ver, vertice(Ver), Vertices),
+    size(Vertices, Size),
+    list_of(Size, inf, InfinitePaths),
+    list_of(Size, false, Passed),
+    nth_element(FirstIndex, From, Vertices),
+    set_by_index(0, FirstIndex, InfinitePaths, Paths),
+    dijkstra_rec(From, FirstIndex, Vertices, Paths, Passed, Results),
+    nth_element(LastIndex, To, Vertices),
+    nth_element(LastIndex, Path, Results), !.
+
+
+
+
+
+
+
+
+
+
+
+
+
+

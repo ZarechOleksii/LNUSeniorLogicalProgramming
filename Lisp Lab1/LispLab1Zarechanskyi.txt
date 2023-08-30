@@ -1,0 +1,17 @@
+(DEFUN put (SYMBOL KEY VALUE) (SETF (GET SYMBOL KEY) VALUE))
+
+(set 'Me 'Oleksii)
+
+(put Me 'Age 20)
+(put Me 'IsStudent T)
+(put Me 'Occupation "Software developer")
+(put Me 'Hobbies (list "Computer games" "Music" "Programming"))
+
+(defun getPersonName (Person) (write-string "Name: ") (write-line (write-to-string Person)))
+(defun isPersonStudent (Person) (cond ((get Person 'IsStudent) (write-line "Is a student")) (T (write-line "Is not a student"))))
+(defun getPersonAge (Person) (write-string "Age: ") (write-line (write-to-string (get Person 'Age))))
+(defun getPersonOccupation (Person) (write-string "Occupation: ") (write-line (get Person 'Occupation)))
+(defun getPersonHobbies (Person) (write-string "Hobbies: ") (write-line (format nil "~{~A~^, ~}" (get Person 'Hobbies))))
+(defun getPerson (Person) (getPersonName Person) (isPersonStudent Person) (getPersonAge Person) (getPersonOccupation Person) (getPersonHobbies Person))
+
+(getPerson Me)

@@ -1,0 +1,169 @@
+(with-open-file (stream "/LispInput.txt") (set 'testString (read-line stream)))
+;(set 'testString "4 6;7 -5.5;2 3;")
+
+(defun createConsRec (string result first second isSecond length)
+    (cond
+        ((>= length (length string)) result)
+        ((string= (subseq string length (+ 1 length)) ";")
+            (createConsRec string 
+                (cons 
+                    (cons 
+                        (with-input-from-string (in first) (read in))
+                        (with-input-from-string (in second) (read in))
+                    )
+                result) 
+            "" "" nil (+ 1 length))
+        )
+        ((string= (subseq string length (+ 1 length)) " ")
+            (createConsRec string result first "" T (+ 1 length))
+        )
+        (isSecond 
+            (createConsRec 
+                string 
+                result 
+                first 
+                (concatenate 'string second (subseq string length (+ 1 length))) 
+                T 
+                (+ 1 length)
+            )
+        )
+        (T
+            (createConsRec 
+                string 
+                result 
+                (concatenate 'string first (subseq string length (+ 1 length))) 
+                ""
+                nil 
+                (+ 1 length)
+            )
+        )
+    )
+)
+
+(defun createList (string) (reverse (createConsRec string (list) "" "" nil 0)))
+
+(defun createListIter (string)
+    (set 'toReturn (list))
+    (set 'current "")
+    (loop for char across string
+    do
+        (cond 
+            ((char= char #\Space)
+                (set 'first current)
+                (set 'current "")
+            )
+            ((char= char #\;)
+                (set 
+                    'toReturn 
+                    (cons 
+                        (cons 
+                            (with-input-from-string (in first) (read in))
+                            (with-input-from-string (in current) (read in))
+                        ) 
+                    toReturn)
+                )
+                (set 'current "")
+            )
+            (T 
+                (set 'current (concatenate 'string current (string char)))
+            )
+        )
+    )
+    (reverse toReturn)
+)
+
+(defun printPolIter (list)
+    (format T "P_~A (x) = " (caar list))
+    (dolist (n list)
+        (format t "(~Ax ^ ~A) " (cdr n) (car n))
+        (cond 
+            ((= (caar (reverse list)) (car n)) (terpri))
+            (T (format t "+ "))
+        )
+    )
+)
+
+(defun printPolRec (list)
+    (cond 
+        ((null list) (terpri))
+        (T 
+            (format t "(~Ax ^ ~A) " (cdar list) (caar list)) 
+            (if (not (null (cdr list))) (format t "+ ")) 
+            (printPolRec (cdr list))
+        )
+    )
+)
+
+(defun printPol (list)
+    (format T "P_~A (x) = " (caar list))
+    (printPolRec list)
+)
+
+(defun antiderivativeIter (list x y)
+    (format T "Antiderivative passing point (iteratively) (~A, ~A):" x y)
+    (terpri)
+    (format T "P_~A (x) = " (+ 1 (caar list)))
+    (set 'current y)
+    (dolist (n list)
+        (set 'current 
+            (-
+                current
+                (* 
+                    (/ (cdr n) (+ 1 (car n))) 
+                    (expt x (+ 1 (car n)))
+                )
+            )
+        )
+        (format t "(~Ax ^ ~A) " (/ (cdr n) (+ 1 (car n))) (+ 1 (car n)))
+        (format t "+ ")
+    )
+    (write-line (write-to-string current))
+)
+
+(defun antiderivativeRec (list x current)
+    (cond 
+        ((null list) current)
+        (T
+            (format t "(~Ax ^ ~A) " (/ (cdar list) (+ 1 (caar list))) (+ 1 (caar list)))
+            (format t "+ ")
+            (antiderivativeRec 
+                (cdr list) 
+                x 
+                (-
+                    current
+                    (* 
+                        (/ (cdar list) (+ 1 (caar list))) 
+                        (expt x (+ 1 (caar list)))
+                    )
+                )
+            )
+        )
+    )
+)
+(defun antiderivative (list x y)
+    (format T "Antiderivative passing point (recursively) (~A, ~A):" x y)
+    (terpri)
+    (format T "P_~A (x) = " (+ 1 (car (car list))))
+    (set 'current y)
+    (write-line (write-to-string (antiderivativeRec list x y)))
+)
+
+(write-line "From string:")
+(write-line "1) Recursively:")
+(write-line (write-to-string (createList testString)))
+(write-line "2) Iteratively:")
+(set 'test (createListIter testString))
+(write-line (write-to-string test))
+
+(write-line "Sorted:")
+(sort test #'> :key #'car)
+(write-line (write-to-string test))
+
+(write-line "Traditional polynomial view")
+(write-line "1) Recursively:")
+(printPol test)
+(write-line "2) Iteratively:")
+(printPolIter test)
+
+(antiderivative test 2 0)
+(antiderivativeIter test 2 0)
